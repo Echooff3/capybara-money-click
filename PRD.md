@@ -45,6 +45,19 @@ This is a single-screen game with touch interactions, animated score display, pa
   - Visual indicators show active power-ups with countdown timers
   - Toast notifications confirm collection
 
+### Combo Multiplier System
+- **Functionality**: Collecting multiple power-ups within a 5-second window builds a combo counter that provides additional multiplier bonuses
+- **Purpose**: Rewards skilled play and quick decision-making, creating exciting gameplay moments
+- **Trigger**: Collecting a power-up within 5 seconds of the previous collection
+- **Progression**: Collect power-up → Combo counter increases → Additional multiplier bonus applied → Combo resets if 5 seconds pass without collection
+- **Success criteria**: 
+  - Combo multiplier scales: 2x combo = 1.25x bonus, 3x = 1.5x bonus, 4x = 1.75x bonus, 5x+ = 2.0x bonus
+  - Combo multiplier stacks multiplicatively with power-up multipliers
+  - Large dramatic indicator appears in center of screen when combo is achieved
+  - Smaller combo badge shows in top-left with timer showing time remaining to extend combo
+  - Visual effects escalate with combo level (colors change from gold to orange to red to magenta to purple)
+  - Toast notification acknowledges combo achievements with special labels (COMBO!, GREAT!, SUPER!, EPIC!, LEGENDARY!)
+
 ### Particle Effect System
 - **Functionality**: Money sign particles emit from capybara during interaction
 - **Purpose**: Provides satisfying visual feedback for successful money generation
@@ -68,6 +81,9 @@ This is a single-screen game with touch interactions, animated score display, pa
 - **Power-Up Stacking**: Multiple power-ups of same or different types can be active simultaneously with multiplicative effects
 - **Power-Up During Game Over**: All power-ups cleared and spawning stopped when game ends
 - **Shield Power-Up**: Prevents money drain completely while active, allowing strategic rest periods
+- **Combo Reset**: Combo resets to 0 if player fails to collect another power-up within 5 seconds
+- **Combo During Game Over**: Combo state cleared when game ends and resets to 0
+- **Combo Indicator Timeout**: Large combo indicator shows for 1.5 seconds after collection, small badge persists until combo expires
 
 ## Design Direction
 The design should evoke a playful arcade aesthetic with a retro-futuristic twist - think neon colors, bold typography, and smooth animations that feel premium and polished. The capybara is the star, so the design should frame it prominently while making the money counter feel like a dramatic scoreboard.
@@ -117,6 +133,8 @@ Animations should feel snappy and arcade-like with exaggerated easing for a play
   - Custom CapybaraButton component handling touch/mouse states with image switching
   - Custom PowerUp component for collectible power-ups with floating animations and glow effects
   - Custom ActivePowerUps component displaying current active boosts with countdown timers
+  - Custom ComboIndicator component for dramatic center-screen combo celebration
+  - Custom ComboBadge component for persistent combo status display with countdown timer
   
 - **States**: 
   - Capybara: Default (not_happy.png), Pressed (happy.png) with scale transform
@@ -133,6 +151,8 @@ Animations should feel snappy and arcade-like with exaggerated easing for a play
   - Rocket icon for 3x turbo power-up
   - Sparkle icon for shield power-up
   - Fire icon for 5x mega power-up
+  - Star icon for combo indicator and badge
+  - Flame icon for high-level combo celebrations (5x+)
   
 - **Spacing**: 
   - Container padding: p-6 on mobile, p-8 on tablet+
@@ -140,6 +160,7 @@ Animations should feel snappy and arcade-like with exaggerated easing for a play
   - Capybara margin: my-8 for breathing room
   - Counter to capybara: gap-12 for clear hierarchy
   - Power-up indicators: gap-2 in vertical stack, top-20 below high score
+  - Combo badge: top-32 left-4, positioned below high score to avoid overlap
   
 - **Mobile**: 
   - Stack layout (flex-col) throughout

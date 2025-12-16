@@ -10,6 +10,8 @@ import { GameOverModal } from '@/components/GameOverModal'
 import { PowerUp, type PowerUpData, type PowerUpType } from '@/components/PowerUp'
 import { ActivePowerUps, type ActivePowerUp } from '@/components/ActivePowerUps'
 import { MoneyJourneyGraph } from '@/components/MoneyJourneyGraph'
+import { ComboIndicator } from '@/components/ComboIndicator'
+import { ComboBadge } from '@/components/ComboBadge'
 import { Toaster, toast } from 'sonner'
 
 const STARTING_MONEY = 1_000_000
@@ -19,6 +21,8 @@ const UPDATE_INTERVAL = 50
 const POWER_UP_SPAWN_INTERVAL = 8000
 const POWER_UP_DESPAWN_TIME = 6000
 const HISTORY_SAMPLE_INTERVAL = 200
+const COMBO_WINDOW = 5000
+const COMBO_DISPLAY_DURATION = 3000
 
 interface DataPoint {
   timestamp: number
@@ -29,6 +33,13 @@ interface PowerUpMarker {
   timestamp: number
   type: PowerUpType
   value: number
+}
+
+interface ComboState {
+  count: number
+  lastCollectTime: number
+  multiplier: number
+  displayUntil: number
 }
 
 function App() {
@@ -43,6 +54,13 @@ function App() {
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([])
   const [moneyHistory, setMoneyHistory] = useState<DataPoint[]>([{ timestamp: Date.now(), value: STARTING_MONEY }])
   const [powerUpMarkers, setPowerUpMarkers] = useState<PowerUpMarker[]>([])
+  const [combo, setCombo] = useState<ComboState>({
+    count: 0,
+    lastCollectTime: 0,
+    multiplier: 1,
+    displayUntil: 0,
+  })
+  const [showComboIndicator, setShowComboIndicator] = useState(false)
 
   const gameLoopRef = useRef<number | undefined>(undefined)
   const lastUpdateRef = useRef<number>(Date.now())
@@ -57,8 +75,10 @@ function App() {
 
   const getPowerUpMultiplier = useCallback(() => {
     if (activePowerUps.length === 0) return 1
-    return activePowerUps.reduce((total, powerUp) => total * powerUp.multiplier, 1)
-  }, [activePowerUps])
+    const powerUpMultiplier = activePowerUps.reduce((total, powerUp) => total * powerUp.multiplier, 1)
+    const comboMultiplier = combo.count >= 2 ? combo.multiplier : 1
+    return powerUpMultiplier * comboMultiplier
+  }, [activePowerUps, combo.multiplier, combo.count])
 
   const hasShield = activePowerUps.some(p => p.type === 'shield')
   const activePowerUpType = activePowerUps.length > 0 ? activePowerUps[activePowerUps.length - 1].type : null
@@ -159,6 +179,22 @@ function App() {
         const now = Date.now()
         return current.filter((powerUp) => powerUp.expiresAt > now)
       })
+      
+      setCombo((current) => {
+        const now = Date.now()
+        if (current.count >= 2 && now > current.displayUntil) {
+          setShowComboIndicator(false)
+          if (now - current.lastCollectTime > COMBO_WINDOW) {
+            return {
+              count: 0,
+              lastCollectTime: 0,
+              multiplier: 1,
+              displayUntil: 0,
+            }
+          }
+        }
+        return current
+      })
     }, 100)
 
     return () => clearInterval(interval)
@@ -231,6 +267,36 @@ function App() {
       powerUpDespawnTimersRef.current.delete(id)
     }
 
+    const now = Date.now()
+    
+    setCombo((current) => {
+      const timeSinceLastCollect = now - current.lastCollectTime
+      let newCount = current.count
+      let newMultiplier = current.multiplier
+
+      if (timeSinceLastCollect <= COMBO_WINDOW && current.count > 0) {
+        newCount = current.count + 1
+        newMultiplier = 1 + (newCount - 1) * 0.25
+      } else {
+        newCount = 1
+        newMultiplier = 1
+      }
+
+      const newComboState = {
+        count: newCount,
+        lastCollectTime: now,
+        multiplier: newMultiplier,
+        displayUntil: now + COMBO_DISPLAY_DURATION,
+      }
+
+      if (newCount >= 2) {
+        setShowComboIndicator(true)
+        setTimeout(() => setShowComboIndicator(false), 1500)
+      }
+
+      return newComboState
+    })
+
     const multiplierMap: Record<PowerUpType, number> = {
       multiplier: 2,
       turbo: 3,
@@ -295,6 +361,13 @@ function App() {
     setMoneyHistory([{ timestamp: Date.now(), value: STARTING_MONEY }])
     setPowerUpMarkers([])
     highScoreNotifiedRef.current = false
+    setCombo({
+      count: 0,
+      lastCollectTime: 0,
+      multiplier: 1,
+      displayUntil: 0,
+    })
+    setShowComboIndicator(false)
   }
 
   const handlePositionUpdate = (x: number, y: number) => {
@@ -302,6 +375,7 @@ function App() {
   }
 
   const maxMoneyValue = Math.max(...moneyHistory.map(d => d.value), STARTING_MONEY, money)
+  const comboTimeLeft = Math.max(0, combo.displayUntil - Date.now())
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary flex flex-col items-center justify-between p-6 overflow-hidden relative">
@@ -333,6 +407,17 @@ function App() {
       </AnimatePresence>
 
       <ActivePowerUps powerUps={activePowerUps} />
+
+      {showComboIndicator && (
+        <ComboIndicator combo={combo.count} multiplier={combo.multiplier} />
+      )}
+
+      <ComboBadge
+        combo={combo.count}
+        multiplier={combo.multiplier}
+        timeLeft={comboTimeLeft}
+        maxTime={COMBO_DISPLAY_DURATION}
+      />
 
       <motion.div
         className="fixed top-4 right-4 z-10"
