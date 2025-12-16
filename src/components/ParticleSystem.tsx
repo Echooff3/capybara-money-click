@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import particleImg from '@/assets/images/particle.png'
 
 interface Particle {
   id: number
   x: number
   driftX: number
   rotation: number
-  emoji: string
   size: number
-  color: string
   duration: number
   wobble: number
 }
@@ -18,9 +17,6 @@ interface ParticleSystemProps {
   centerX: number
   centerY: number
 }
-
-const EMOJIS = ['💰', '💵', '💴', '💶', '💷', '💸', '🤑', '💲', '🪙', '💳', '🏦', '📈', '💹', '✨', '⭐', '🌟', '💫', '🎉', '🎊', '🔥']
-const COLORS = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1', '#7B68EE', '#32CD32', '#FF1493']
 
 export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemProps) {
   const [particles, setParticles] = useState<Particle[]>([])
@@ -42,9 +38,7 @@ export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemPro
           x: centerX + (Math.random() - 0.5) * 120,
           driftX: Math.cos(angle) * velocity,
           rotation: (Math.random() - 0.5) * 720,
-          emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
           size: 30 + Math.random() * 40,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
           duration: 1 + Math.random() * 0.8,
           wobble: (Math.random() - 0.5) * 40,
         }
@@ -64,12 +58,15 @@ export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemPro
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-20">
       <AnimatePresence>
         {particles.map((particle) => (
-          <motion.div
+          <motion.img
             key={particle.id}
-            className="absolute font-display"
+            src={particleImg}
+            alt=""
+            className="absolute"
             style={{
-              fontSize: `${particle.size}px`,
-              filter: `drop-shadow(0 0 8px ${particle.color})`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.8))',
             }}
             initial={{
               x: particle.x,
@@ -94,9 +91,7 @@ export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemPro
                 duration: particle.duration,
               },
             }}
-          >
-            {particle.emoji}
-          </motion.div>
+          />
         ))}
       </AnimatePresence>
     </div>
