@@ -33,6 +33,18 @@ This is a single-screen game with touch interactions, animated score display, pa
 - **Progression**: Release → Capybara switches to unhappy image → Particles stop → Money rapidly decreases → Game over at $0
 - **Success criteria**: Drain rate should be significantly faster than gain rate to create urgency
 
+### Power-Up System
+- **Functionality**: Collectible power-ups spawn randomly on screen, providing temporary boosts when collected
+- **Purpose**: Adds strategic depth, excitement, and variety to gameplay
+- **Trigger**: Power-ups spawn automatically every 8 seconds during gameplay
+- **Progression**: Power-up spawns → Floats and glows on screen → User clicks/taps to collect → Temporary boost applied → Effect expires after duration
+- **Success criteria**: 
+  - Four power-up types: 2x Multiplier (common), 3x Turbo (uncommon), Shield (rare - stops drain), 5x Mega (very rare)
+  - Power-ups despawn after 6 seconds if not collected
+  - Multiple power-ups can stack multiplicatively
+  - Visual indicators show active power-ups with countdown timers
+  - Toast notifications confirm collection
+
 ### Particle Effect System
 - **Functionality**: Money sign particles emit from capybara during interaction
 - **Purpose**: Provides satisfying visual feedback for successful money generation
@@ -53,6 +65,9 @@ This is a single-screen game with touch interactions, animated score display, pa
 - **Rapid Tapping**: Prevent exploit by ensuring money always drains when not held continuously
 - **Tab Switching**: Pause money drain when tab loses focus to prevent unfair losses
 - **Starting Amount**: Always start at $1,000,000 for new sessions
+- **Power-Up Stacking**: Multiple power-ups of same or different types can be active simultaneously with multiplicative effects
+- **Power-Up During Game Over**: All power-ups cleared and spawning stopped when game ends
+- **Shield Power-Up**: Prevents money drain completely while active, allowing strategic rest periods
 
 ## Design Direction
 The design should evoke a playful arcade aesthetic with a retro-futuristic twist - think neon colors, bold typography, and smooth animations that feel premium and polished. The capybara is the star, so the design should frame it prominently while making the money counter feel like a dramatic scoreboard.
@@ -93,34 +108,46 @@ Animations should feel snappy and arcade-like with exaggerated easing for a play
 ## Component Selection
 - **Components**: 
   - Button (Shadcn) - For restart/reset actions with custom neon styling
-  - Card (Shadcn) - For high score display and game over modal with glass morphism effect
+  - Card (Shadcn) - For high score display, active power-ups, and game over modal with glass morphism effect
   - No complex forms needed - this is gesture-driven gameplay
   
 - **Customizations**: 
   - Custom AnimatedCounter component using framer-motion for pinball-style number rolling
   - Custom ParticleSystem component with canvas or CSS transforms for money particles
   - Custom CapybaraButton component handling touch/mouse states with image switching
+  - Custom PowerUp component for collectible power-ups with floating animations and glow effects
+  - Custom ActivePowerUps component displaying current active boosts with countdown timers
   
 - **States**: 
   - Capybara: Default (not_happy.png), Pressed (happy.png) with scale transform
   - Money Counter: Idle, Increasing (green tint), Decreasing (pink tint), GameOver
   - Buttons: Default, Hover (glow effect), Active (scale down), Disabled (reduced opacity)
+  - Power-Ups: Spawning (scale in with rotation), Idle (floating bob animation), Collecting (scale out), Despawning (fade out)
+  - Active Power-Ups: Indicator cards with icon, label, and progress bar showing remaining time
   
 - **Icon Selection**: 
   - Trophy icon for high score display
   - Play/Restart icon for game reset
   - Sparkles icon for particle effects indication
+  - Lightning icon for 2x multiplier power-up
+  - Rocket icon for 3x turbo power-up
+  - Sparkle icon for shield power-up
+  - Fire icon for 5x mega power-up
   
 - **Spacing**: 
   - Container padding: p-6 on mobile, p-8 on tablet+
   - Element gaps: gap-4 for compact grouping, gap-8 for section separation
   - Capybara margin: my-8 for breathing room
   - Counter to capybara: gap-12 for clear hierarchy
+  - Power-up indicators: gap-2 in vertical stack, top-20 below high score
   
 - **Mobile**: 
   - Stack layout (flex-col) throughout
   - Large touch target for capybara (min 200px on small screens, scales up to 400px on larger)
+  - Large touch targets for power-ups (min 64px) with extra padding
   - Fixed positioning for high score in top-right corner
+  - Fixed positioning for active power-ups below high score
   - Full-width buttons at bottom for easy thumb reach
   - Prevent text selection and touch callouts for game-like feel
   - Lock viewport zoom to prevent accidental zooming during gameplay
+  - Power-ups positioned in safe zones avoiding UI overlap

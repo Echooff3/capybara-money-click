@@ -7,12 +7,16 @@ import { AnimatedCounter } from '@/components/AnimatedCounter'
 import { CapybaraButton } from '@/components/CapybaraButton'
 import { ParticleSystem } from '@/components/ParticleSystem'
 import { GameOverModal } from '@/components/GameOverModal'
+import { PowerUp, type PowerUpData, type PowerUpType } from '@/components/PowerUp'
+import { ActivePowerUps, type ActivePowerUp } from '@/components/ActivePowerUps'
 import { Toaster, toast } from 'sonner'
 
 const STARTING_MONEY = 1_000_000
 const GAIN_RATE = 1000
 const DRAIN_RATE = 5000
 const UPDATE_INTERVAL = 50
+const POWER_UP_SPAWN_INTERVAL = 8000
+const POWER_UP_DESPAWN_TIME = 6000
 
 function App() {
   const [money, setMoney] = useState(STARTING_MONEY)
@@ -22,12 +26,23 @@ function App() {
   const [particlePosition, setParticlePosition] = useState({ x: 0, y: 0 })
   const [isIncreasing, setIsIncreasing] = useState(false)
   const [isDecreasing, setIsDecreasing] = useState(false)
+  const [powerUps, setPowerUps] = useState<PowerUpData[]>([])
+  const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([])
 
   const gameLoopRef = useRef<number | undefined>(undefined)
   const lastUpdateRef = useRef<number>(Date.now())
   const isDocumentVisible = useRef(true)
+  const powerUpSpawnTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const powerUpDespawnTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const currentHighScore = highScore ?? STARTING_MONEY
+
+  const getPowerUpMultiplier = useCallback(() => {
+    if (activePowerUps.length === 0) return 1
+    return activePowerUps.reduce((total, powerUp) => total * powerUp.multiplier, 1)
+  }, [activePowerUps])
+
+  const hasShield = activePowerUps.some(p => p.type === 'shield')
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -52,13 +67,19 @@ function App() {
       let newMoney = currentMoney
 
       if (isPressed) {
-        newMoney += GAIN_RATE * deltaTime
+        const multiplier = getPowerUpMultiplier()
+        newMoney += GAIN_RATE * deltaTime * multiplier
         setIsIncreasing(true)
         setIsDecreasing(false)
       } else {
-        newMoney -= DRAIN_RATE * deltaTime
-        setIsIncreasing(false)
-        setIsDecreasing(true)
+        if (!hasShield) {
+          newMoney -= DRAIN_RATE * deltaTime
+          setIsIncreasing(false)
+          setIsDecreasing(true)
+        } else {
+          setIsIncreasing(false)
+          setIsDecreasing(false)
+        }
       }
 
       if (newMoney <= 0) {
@@ -79,7 +100,7 @@ function App() {
 
       return newMoney
     })
-  }, [isPressed, isGameOver, currentHighScore, setHighScore])
+  }, [isPressed, isGameOver, currentHighScore, setHighScore, getPowerUpMultiplier, hasShield])
 
   useEffect(() => {
     const gameLoop = () => {
@@ -96,6 +117,123 @@ function App() {
     }
   }, [updateMoney])
 
+  useEffect(() => {
+    setActivePowerUps((current) => {
+      const now = Date.now()
+      return current.filter((powerUp) => powerUp.expiresAt > now)
+    })
+
+    const interval = setInterval(() => {
+      setActivePowerUps((current) => {
+        const now = Date.now()
+        return current.filter((powerUp) => powerUp.expiresAt > now)
+      })
+    }, 100)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (isGameOver) {
+      if (powerUpSpawnTimerRef.current) {
+        clearTimeout(powerUpSpawnTimerRef.current)
+      }
+      powerUpDespawnTimersRef.current.forEach((timer) => clearTimeout(timer))
+      powerUpDespawnTimersRef.current.clear()
+      setPowerUps([])
+      setActivePowerUps([])
+      return
+    }
+
+    const spawnPowerUp = () => {
+      const types: PowerUpType[] = ['multiplier', 'turbo', 'shield', 'mega']
+      const weights = [40, 30, 20, 10]
+      
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0)
+      let random = Math.random() * totalWeight
+      
+      let selectedType: PowerUpType = 'multiplier'
+      for (let i = 0; i < types.length; i++) {
+        random -= weights[i]
+        if (random <= 0) {
+          selectedType = types[i]
+          break
+        }
+      }
+
+      const newPowerUp: PowerUpData = {
+        id: `${Date.now()}-${Math.random()}`,
+        type: selectedType,
+        x: 10 + Math.random() * 80,
+        y: 20 + Math.random() * 60,
+      }
+
+      setPowerUps((current) => [...current, newPowerUp])
+
+      const despawnTimer = setTimeout(() => {
+        setPowerUps((current) => current.filter((p) => p.id !== newPowerUp.id))
+        powerUpDespawnTimersRef.current.delete(newPowerUp.id)
+      }, POWER_UP_DESPAWN_TIME)
+
+      powerUpDespawnTimersRef.current.set(newPowerUp.id, despawnTimer)
+
+      powerUpSpawnTimerRef.current = setTimeout(spawnPowerUp, POWER_UP_SPAWN_INTERVAL)
+    }
+
+    powerUpSpawnTimerRef.current = setTimeout(spawnPowerUp, POWER_UP_SPAWN_INTERVAL)
+
+    return () => {
+      if (powerUpSpawnTimerRef.current) {
+        clearTimeout(powerUpSpawnTimerRef.current)
+      }
+      powerUpDespawnTimersRef.current.forEach((timer) => clearTimeout(timer))
+      powerUpDespawnTimersRef.current.clear()
+    }
+  }, [isGameOver])
+
+  const handleCollectPowerUp = (id: string, type: PowerUpType) => {
+    setPowerUps((current) => current.filter((p) => p.id !== id))
+
+    const despawnTimer = powerUpDespawnTimersRef.current.get(id)
+    if (despawnTimer) {
+      clearTimeout(despawnTimer)
+      powerUpDespawnTimersRef.current.delete(id)
+    }
+
+    const multiplierMap: Record<PowerUpType, number> = {
+      multiplier: 2,
+      turbo: 3,
+      shield: 1,
+      mega: 5,
+    }
+
+    const durationMap: Record<PowerUpType, number> = {
+      multiplier: 10000,
+      turbo: 10000,
+      shield: 15000,
+      mega: 10000,
+    }
+
+    const labelMap: Record<PowerUpType, string> = {
+      multiplier: '2x Money Boost!',
+      turbo: '3x Turbo Mode!',
+      shield: 'Shield Active - No Drain!',
+      mega: '5x MEGA BOOST!',
+    }
+
+    toast.success(labelMap[type], {
+      description: type === 'shield' ? '15 seconds of protection' : `${durationMap[type] / 1000}s duration`,
+    })
+
+    const newActivePowerUp: ActivePowerUp = {
+      type,
+      expiresAt: Date.now() + durationMap[type],
+      multiplier: multiplierMap[type],
+    }
+
+    setActivePowerUps((current) => [...current, newActivePowerUp])
+  }
+
   const handlePressStart = () => {
     if (isGameOver) return
     setIsPressed(true)
@@ -111,6 +249,8 @@ function App() {
     setIsPressed(false)
     setIsIncreasing(false)
     setIsDecreasing(false)
+    setPowerUps([])
+    setActivePowerUps([])
     lastUpdateRef.current = Date.now()
   }
 
@@ -127,6 +267,18 @@ function App() {
         centerX={particlePosition.x}
         centerY={particlePosition.y}
       />
+
+      <AnimatePresence>
+        {powerUps.map((powerUp) => (
+          <PowerUp
+            key={powerUp.id}
+            powerUp={powerUp}
+            onCollect={handleCollectPowerUp}
+          />
+        ))}
+      </AnimatePresence>
+
+      <ActivePowerUps powerUps={activePowerUps} />
 
       <motion.div
         className="fixed top-4 right-4 z-10"
@@ -157,7 +309,7 @@ function App() {
             Capybara Money Game
           </h1>
           <p className="font-body text-center text-muted-foreground text-sm md:text-base">
-            Hold the capybara to gain money. Let go and watch it drain!
+            Hold the capybara to gain money. Collect power-ups to boost earnings!
           </p>
         </motion.div>
 
@@ -181,7 +333,13 @@ function App() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {isPressed ? '💰 Keep holding! 💰' : '⚠️ Money is draining! ⚠️'}
+            {isPressed 
+              ? activePowerUps.length > 0 
+                ? '🔥 BOOSTED! 🔥' 
+                : '💰 Keep holding! 💰'
+              : hasShield
+              ? '🛡️ Protected by shield! 🛡️'
+              : '⚠️ Money is draining! ⚠️'}
           </motion.p>
         )}
       </div>
