@@ -50,8 +50,10 @@ function App() {
   const isDocumentVisible = useRef(true)
   const powerUpSpawnTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const powerUpDespawnTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const highScoreNotifiedRef = useRef(false)
 
   const currentHighScore = highScore ?? STARTING_MONEY
+  const displayHighScore = Math.max(currentHighScore, money)
 
   const getPowerUpMultiplier = useCallback(() => {
     if (activePowerUps.length === 0) return 1
@@ -105,12 +107,13 @@ function App() {
       }
 
       if (newMoney > currentHighScore) {
-        const shouldShowToast = newMoney > STARTING_MONEY && currentHighScore <= STARTING_MONEY
+        const shouldShowToast = !highScoreNotifiedRef.current && newMoney > STARTING_MONEY && currentHighScore <= STARTING_MONEY
         setHighScore(newMoney)
         if (shouldShowToast) {
           toast('New High Score! 🏆', {
             description: `$${Math.round(newMoney).toLocaleString()}`,
           })
+          highScoreNotifiedRef.current = true
         }
       }
 
@@ -290,6 +293,7 @@ function App() {
     lastHistorySampleRef.current = Date.now()
     setMoneyHistory([{ timestamp: Date.now(), value: STARTING_MONEY }])
     setPowerUpMarkers([])
+    highScoreNotifiedRef.current = false
   }
 
   const handlePositionUpdate = (x: number, y: number) => {
@@ -340,7 +344,7 @@ function App() {
             <div>
               <p className="font-body text-xs text-muted-foreground">High Score</p>
               <p className="font-display text-lg text-primary">
-                ${Math.round(currentHighScore).toLocaleString()}
+                ${Math.round(displayHighScore).toLocaleString()}
               </p>
             </div>
           </div>
