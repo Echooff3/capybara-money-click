@@ -13,6 +13,7 @@ export interface PowerUpData {
 interface PowerUpProps {
   powerUp: PowerUpData
   onCollect: (id: string, type: PowerUpType) => void
+  disabled?: boolean
 }
 
 const POWER_UP_ICONS = {
@@ -22,10 +23,11 @@ const POWER_UP_ICONS = {
   mega: { Icon: Fire, color: '#FF006E', label: '5x' },
 }
 
-export function PowerUp({ powerUp, onCollect }: PowerUpProps) {
+export function PowerUp({ powerUp, onCollect, disabled = false }: PowerUpProps) {
   const { Icon, color, label } = POWER_UP_ICONS[powerUp.type]
 
   const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+    if (disabled) return
     e.preventDefault()
     e.stopPropagation()
     onCollect(powerUp.id, powerUp.type)
@@ -33,15 +35,16 @@ export function PowerUp({ powerUp, onCollect }: PowerUpProps) {
 
   return (
     <motion.div
-      className="absolute cursor-pointer z-20"
+      className="absolute z-20"
       style={{
         left: `${powerUp.x}%`,
         top: `${powerUp.y}%`,
+        cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       initial={{ scale: 0, opacity: 0, rotate: -180 }}
       animate={{ 
         scale: 1, 
-        opacity: 1, 
+        opacity: disabled ? 0.4 : 1, 
         rotate: 0,
         y: [0, -10, 0],
       }}
@@ -61,14 +64,14 @@ export function PowerUp({ powerUp, onCollect }: PowerUpProps) {
     >
       <motion.div
         className="relative"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={disabled ? {} : { scale: 1.1 }}
+        whileTap={disabled ? {} : { scale: 0.9 }}
       >
         <motion.div
           className="absolute inset-0 rounded-full blur-xl"
           style={{ backgroundColor: color }}
           animate={{
-            opacity: [0.3, 0.6, 0.3],
+            opacity: disabled ? [0.1, 0.2, 0.1] : [0.3, 0.6, 0.3],
             scale: [1, 1.2, 1],
           }}
           transition={{
@@ -79,10 +82,11 @@ export function PowerUp({ powerUp, onCollect }: PowerUpProps) {
         />
         
         <div
-          className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center border-4 shadow-lg"
+          className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center border-4 shadow-lg transition-all"
           style={{ 
             backgroundColor: color,
             borderColor: 'white',
+            filter: disabled ? 'grayscale(50%)' : 'none',
           }}
         >
           <Icon size={32} weight="fill" className="text-white" />
@@ -93,6 +97,7 @@ export function PowerUp({ powerUp, onCollect }: PowerUpProps) {
           style={{ 
             backgroundColor: color,
             color: 'white',
+            filter: disabled ? 'grayscale(50%)' : 'none',
           }}
         >
           {label}

@@ -274,6 +274,7 @@ function App() {
             key={powerUp.id}
             powerUp={powerUp}
             onCollect={handleCollectPowerUp}
+            disabled={isPressed}
           />
         ))}
       </AnimatePresence>
@@ -336,6 +337,8 @@ function App() {
             {isPressed 
               ? activePowerUps.length > 0 
                 ? '🔥 BOOSTED! 🔥' 
+                : powerUps.length > 0
+                ? '⚠️ Release to collect power-ups! ⚠️'
                 : '💰 Keep holding! 💰'
               : hasShield
               ? '🛡️ Protected by shield! 🛡️'
