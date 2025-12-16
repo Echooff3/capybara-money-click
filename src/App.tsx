@@ -304,7 +304,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary flex flex-col items-center justify-between p-6 overflow-hidden relative">
-      <Toaster position="top-center" theme="dark" />
+      <Toaster position="bottom-center" theme="dark" />
       
       <MoneyJourneyGraph
         dataPoints={moneyHistory}
