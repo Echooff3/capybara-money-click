@@ -61,6 +61,7 @@ function App() {
   }, [activePowerUps])
 
   const hasShield = activePowerUps.some(p => p.type === 'shield')
+  const activePowerUpType = activePowerUps.length > 0 ? activePowerUps[activePowerUps.length - 1].type : null
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -317,6 +318,7 @@ function App() {
         isActive={isPressed && !isGameOver}
         centerX={particlePosition.x}
         centerY={particlePosition.y}
+        powerUpType={activePowerUpType}
       />
 
       <AnimatePresence>
