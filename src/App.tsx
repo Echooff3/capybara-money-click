@@ -9,6 +9,7 @@ import { ParticleSystem } from '@/components/ParticleSystem'
 import { GameOverModal } from '@/components/GameOverModal'
 import { PowerUp, type PowerUpData, type PowerUpType } from '@/components/PowerUp'
 import { ActivePowerUps, type ActivePowerUp } from '@/components/ActivePowerUps'
+import { MoneyJourneyGraph } from '@/components/MoneyJourneyGraph'
 import { Toaster, toast } from 'sonner'
 
 const STARTING_MONEY = 1_000_000
@@ -17,6 +18,18 @@ const DRAIN_RATE = 5000
 const UPDATE_INTERVAL = 50
 const POWER_UP_SPAWN_INTERVAL = 8000
 const POWER_UP_DESPAWN_TIME = 6000
+const HISTORY_SAMPLE_INTERVAL = 200
+
+interface DataPoint {
+  timestamp: number
+  value: number
+}
+
+interface PowerUpMarker {
+  timestamp: number
+  type: PowerUpType
+  value: number
+}
 
 function App() {
   const [money, setMoney] = useState(STARTING_MONEY)
@@ -28,9 +41,12 @@ function App() {
   const [isDecreasing, setIsDecreasing] = useState(false)
   const [powerUps, setPowerUps] = useState<PowerUpData[]>([])
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([])
+  const [moneyHistory, setMoneyHistory] = useState<DataPoint[]>([{ timestamp: Date.now(), value: STARTING_MONEY }])
+  const [powerUpMarkers, setPowerUpMarkers] = useState<PowerUpMarker[]>([])
 
   const gameLoopRef = useRef<number | undefined>(undefined)
   const lastUpdateRef = useRef<number>(Date.now())
+  const lastHistorySampleRef = useRef<number>(Date.now())
   const isDocumentVisible = useRef(true)
   const powerUpSpawnTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const powerUpDespawnTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
@@ -96,6 +112,17 @@ function App() {
             description: `$${Math.round(newMoney).toLocaleString()}`,
           })
         }
+      }
+
+      if (now - lastHistorySampleRef.current >= HISTORY_SAMPLE_INTERVAL) {
+        setMoneyHistory((current) => {
+          const newHistory = [...current, { timestamp: now, value: newMoney }]
+          if (newHistory.length > 500) {
+            return newHistory.slice(-500)
+          }
+          return newHistory
+        })
+        lastHistorySampleRef.current = now
       }
 
       return newMoney
@@ -232,6 +259,14 @@ function App() {
     }
 
     setActivePowerUps((current) => [...current, newActivePowerUp])
+
+    setPowerUpMarkers((current) => {
+      const newMarkers = [...current, { timestamp: Date.now(), type, value: money }]
+      if (newMarkers.length > 50) {
+        return newMarkers.slice(-50)
+      }
+      return newMarkers
+    })
   }
 
   const handlePressStart = () => {
@@ -252,15 +287,27 @@ function App() {
     setPowerUps([])
     setActivePowerUps([])
     lastUpdateRef.current = Date.now()
+    lastHistorySampleRef.current = Date.now()
+    setMoneyHistory([{ timestamp: Date.now(), value: STARTING_MONEY }])
+    setPowerUpMarkers([])
   }
 
   const handlePositionUpdate = (x: number, y: number) => {
     setParticlePosition({ x, y })
   }
 
+  const maxMoneyValue = Math.max(...moneyHistory.map(d => d.value), STARTING_MONEY, money)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary flex flex-col items-center justify-between p-6 overflow-hidden relative">
       <Toaster position="top-center" theme="dark" />
+      
+      <MoneyJourneyGraph
+        dataPoints={moneyHistory}
+        powerUpMarkers={powerUpMarkers}
+        maxValue={maxMoneyValue}
+        startingValue={STARTING_MONEY}
+      />
       
       <ParticleSystem
         isActive={isPressed && !isGameOver}
