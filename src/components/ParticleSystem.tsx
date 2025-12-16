@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import particleImg from '@/assets/images/particle.png'
 
 interface Particle {
   id: number
@@ -47,7 +48,7 @@ export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemPro
         {particles.map((particle) => (
           <motion.div
             key={particle.id}
-            className="absolute text-4xl"
+            className="absolute"
             initial={{
               x: particle.x,
               y: centerY,
@@ -68,7 +69,12 @@ export function ParticleSystem({ isActive, centerX, centerY }: ParticleSystemPro
               ease: 'easeOut',
             }}
           >
-            💰
+            <img 
+              src={particleImg} 
+              alt="Money particle" 
+              className="w-12 h-12 object-contain pointer-events-none"
+              draggable={false}
+            />
           </motion.div>
         ))}
       </AnimatePresence>
