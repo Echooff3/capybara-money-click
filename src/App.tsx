@@ -348,19 +348,6 @@ function App() {
       </motion.div>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-8 md:gap-12 max-w-2xl w-full">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <h1 className="font-display text-2xl md:text-3xl text-center text-primary mb-2">
-            Capybara Money Game
-          </h1>
-          <p className="font-body text-center text-muted-foreground text-sm md:text-base">
-            Hold the capybara to gain money. Collect power-ups to boost earnings!
-          </p>
-        </motion.div>
-
         <AnimatedCounter
           value={money}
           isIncreasing={isIncreasing}
@@ -373,6 +360,22 @@ function App() {
           onPressEnd={handlePressEnd}
           onPositionUpdate={handlePositionUpdate}
         />
+      </div>
+
+      <div className="pb-6 flex flex-col items-center gap-3 max-w-2xl w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-center"
+        >
+          <h1 className="font-display text-xl md:text-2xl text-primary mb-1">
+            Capybara Money Game
+          </h1>
+          <p className="font-body text-muted-foreground text-xs md:text-sm">
+            Hold the capybara to gain money. Collect power-ups to boost earnings!
+          </p>
+        </motion.div>
 
         {!isGameOver && (
           <motion.p
@@ -393,8 +396,6 @@ function App() {
           </motion.p>
         )}
       </div>
-
-      <div className="h-20" />
 
       <AnimatePresence>
         {isGameOver && (
