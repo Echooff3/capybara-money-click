@@ -41,6 +41,7 @@ export function ComboIndicator({ combo, multiplier }: ComboIndicatorProps) {
     <AnimatePresence>
       <motion.div
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+        style={{ willChange: 'transform, opacity' }}
         initial={{ scale: 0, rotate: -45, opacity: 0 }}
         animate={{ scale: 1, rotate: 0, opacity: 1 }}
         exit={{ scale: 0, rotate: 45, opacity: 0 }}

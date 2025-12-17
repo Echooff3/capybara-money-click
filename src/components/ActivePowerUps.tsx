@@ -26,6 +26,7 @@ export function ActivePowerUps({ powerUps }: ActivePowerUpsProps) {
   return (
     <motion.div
       className="fixed top-20 right-4 z-10 flex flex-col gap-2"
+      style={{ willChange: 'transform, opacity' }}
       initial={{ x: 100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
     >
@@ -38,6 +39,7 @@ export function ActivePowerUps({ powerUps }: ActivePowerUpsProps) {
           return (
             <motion.div
               key={`${powerUp.type}-${index}`}
+              style={{ willChange: 'transform, opacity' }}
               initial={{ scale: 0, x: 50, rotate: 10 }}
               animate={{ scale: 1, x: 0, rotate: 0 }}
               exit={{ scale: 0, x: 50, rotate: -10, opacity: 0 }}
