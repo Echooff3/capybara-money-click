@@ -40,6 +40,7 @@ export function PowerUp({ powerUp, onCollect, disabled = false }: PowerUpProps) 
         left: `${powerUp.x}%`,
         top: `${powerUp.y}%`,
         cursor: disabled ? 'not-allowed' : 'pointer',
+        willChange: 'transform, opacity',
       }}
       initial={{ scale: 0, opacity: 0, rotate: -180 }}
       animate={{ 
