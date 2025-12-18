@@ -27,6 +27,7 @@ export function ComboBadge({ combo, multiplier, timeLeft, maxTime }: ComboBadgeP
     <AnimatePresence>
       <motion.div
         className="fixed top-32 left-4 z-10"
+        style={{ willChange: 'transform, opacity' }}
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -100, opacity: 0 }}

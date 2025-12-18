@@ -5,11 +5,11 @@ import { Trophy } from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
 import { AnimatedCounter } from '@/components/AnimatedCounter'
 import { CapybaraButton } from '@/components/CapybaraButton'
-import { ParticleSystem } from '@/components/ParticleSystem'
+import { PixiParticleSystem } from '@/components/PixiParticleSystem'
 import { GameOverModal } from '@/components/GameOverModal'
 import { PowerUp, type PowerUpData, type PowerUpType } from '@/components/PowerUp'
 import { ActivePowerUps, type ActivePowerUp } from '@/components/ActivePowerUps'
-import { MoneyJourneyGraph } from '@/components/MoneyJourneyGraph'
+import { PixiMoneyJourneyGraph } from '@/components/PixiMoneyJourneyGraph'
 import { ComboIndicator } from '@/components/ComboIndicator'
 import { ComboBadge } from '@/components/ComboBadge'
 import { Toaster, toast } from 'sonner'
@@ -378,17 +378,19 @@ function App() {
   const comboTimeLeft = Math.max(0, combo.displayUntil - Date.now())
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary flex flex-col items-center justify-between p-6 overflow-hidden relative">
-      <Toaster position="bottom-center" theme="dark" />
+    <div 
+      className="min-h-screen bg-gradient-to-br from-background via-background to-secondary flex flex-col items-center justify-between p-6 overflow-hidden relative"
+      style={{ willChange: 'transform' }}
+    >      <Toaster position="bottom-center" theme="dark" />
       
-      <MoneyJourneyGraph
+      <PixiMoneyJourneyGraph
         dataPoints={moneyHistory}
         powerUpMarkers={powerUpMarkers}
         maxValue={maxMoneyValue}
         startingValue={STARTING_MONEY}
       />
       
-      <ParticleSystem
+      <PixiParticleSystem
         isActive={isPressed && !isGameOver}
         centerX={particlePosition.x}
         centerY={particlePosition.y}

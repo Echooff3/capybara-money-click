@@ -18,8 +18,8 @@ export function CapybaraButton({
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault()
     const rect = e.currentTarget.getBoundingClientRect()
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
+    const centerX = ((rect.left + rect.width / 2) / window.innerWidth) * 100
+    const centerY = ((rect.top + rect.height / 2) / window.innerHeight) * 100
     onPositionUpdate(centerX, centerY)
     onPressStart()
   }
@@ -32,6 +32,7 @@ export function CapybaraButton({
   return (
     <motion.div
       className="relative cursor-pointer touch-none select-none"
+      style={{ willChange: 'transform' }}
       onMouseDown={handleInteractionStart}
       onMouseUp={handleInteractionEnd}
       onMouseLeave={handleInteractionEnd}
