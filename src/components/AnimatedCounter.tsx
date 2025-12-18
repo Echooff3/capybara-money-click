@@ -36,11 +36,12 @@ export function AnimatedCounter({ value, isIncreasing, isDecreasing }: AnimatedC
   return (
     <motion.div
       className={`font-display text-5xl sm:text-6xl md:text-7xl font-bold text-center ${colorClass} text-glow transition-colors duration-300`}
+      style={{ willChange: 'transform, opacity' }}
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
     >
-      <motion.span>{display}</motion.span>
+      <motion.span style={{ willChange: 'contents' }}>{display}</motion.span>
     </motion.div>
   )
 }
